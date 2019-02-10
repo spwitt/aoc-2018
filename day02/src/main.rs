@@ -33,7 +33,15 @@ fn count_matches(input: Vec<&str>, interest: Vec<usize>) -> HashMap<usize, usize
             }
         }
     }
-    counts.iter().filter(|(&interest_count, _)| interest.iter().any(|&interest_val| interest_count == interest_val)).map(|(&a, &b)| (a, b)).collect()
+    counts
+        .iter()
+        .filter(|(&interest_count, _)| {
+            interest
+                .iter()
+                .any(|&interest_val| interest_count == interest_val)
+        })
+        .map(|(&a, &b)| (a, b))
+        .collect()
 }
 
 #[cfg(test)]
@@ -41,7 +49,9 @@ mod tests {
     use super::*;
 
     fn sample_vec() -> Vec<&'static str> {
-        vec!["abcdef", "bababc", "abbcde", "abcccd", "aabcdd", "abcdee", "ababab"]
+        vec![
+            "abcdef", "bababc", "abbcde", "abcccd", "aabcdd", "abcdee", "ababab",
+        ]
     }
 
     #[test]
