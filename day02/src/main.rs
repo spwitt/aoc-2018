@@ -34,13 +34,12 @@ fn count_matches(input: Vec<&str>, interest: Vec<usize>) -> HashMap<usize, usize
         }
     }
     counts
-        .iter()
-        .filter(|(&interest_count, _)| {
+        .into_iter()
+        .filter(|(interest_count, _)| {
             interest
                 .iter()
-                .any(|&interest_val| interest_count == interest_val)
+                .any(|interest_val| interest_count == interest_val)
         })
-        .map(|(&a, &b)| (a, b))
         .collect()
 }
 
