@@ -5,3 +5,4 @@ authors = ["Spencer Witt <spencer.witt@gmail.com>"]
 edition = "2018"
 
 [dependencies]
+aoc-util = {path = "../aoc-util"}
