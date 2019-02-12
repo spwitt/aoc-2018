@@ -1,11 +1,11 @@
 use aoc_util::stdin_to_line_vec;
-use std::cmp::{self, Ordering};
+use std::cmp;
 
 fn main() {
     let input = stdin_to_line_vec();
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy)]
 struct Point {
     x: i32,
     y: i32,
@@ -17,26 +17,6 @@ impl Point {
             x,
             y,
         }
-    }
-}
-
-impl PartialOrd for Point {
-    fn partial_cmp(&self, other: &Point) -> Option<Ordering> {
-        Some(self.cmp(other))
-    }
-}
-
-// This implementation will only return less if both coordinates in self
-// have value <= the corresponding values in other
-impl Ord for Point {
-    fn cmp(&self, other: &Point) -> Ordering {
-        if self.x == other.x && self.y == other.y {
-            return Ordering::Equal;
-        }
-        if self.x <= other.x && self.y <= other.y {
-            return Ordering::Less;
-        }
-        Ordering::Greater
     }
 }
 
@@ -59,11 +39,21 @@ impl Claim {
         }
     }
 
-    fn intersection(&self, claim: &Claim) -> Option<Claim> {
-        let p1 = cmp::max(self.p1, claim.p1);
-        let p2 = cmp::min(self.p2, claim.p2);
-        if p1 <= p2 {
-            Some(Claim::from_points(p1, p2))
+    fn top_right(&self) -> Point {
+        Point::new(self.p2.x, self.p1.y)
+    }
+
+    fn bot_left(&self) -> Point {
+        Point::new(self.p1.x, self.p2.y)
+    }
+
+    fn intersection(&self, other: &Claim) -> Option<Claim> {
+        let x1 = cmp::max(self.p1.x, other.p1.x);
+        let y1 = cmp::max(self.p1.y, other.p1.y);
+        let x2 = cmp::min(self.p2.x, other.p2.x);
+        let y2 = cmp::min(self.p2.y, other.p2.y);
+        if x1 <= x2 && y1 <= y2 {
+            Some(Claim::new(x1, y1, x2, y2))
         } else {
             None
         }
@@ -75,40 +65,14 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_equal_points() {
-        let p1 = Point::new(2, 2);
-        let p2 = Point::new(2, 2);
-        assert!(p1 == p2);
-    }
-
-    #[test]
-    fn test_not_equal_points() {
-        let p1 = Point::new(2, 2);
-        let p2 = Point::new(1, 2);
-        assert!(p1 != p2);
-    }
-
-    #[test]
-    fn test_lt_points() {
-        let p1 = Point::new(1, 2);
-        let p2 = Point::new(2, 2);
-        assert!(p1 < p2);
-    }
-
-    #[test]
-    fn test_gt_points() {
-        let p1 = Point::new(1, 3);
-        let p2 = Point::new(2, 2);
-        assert!(p1 > p2);
-    }
-
-    #[test]
     fn intersection_p1_in_p2() {
         let c1 = Claim::new(3, 4, 5, 6);
         let c2 = Claim::new(2, 3, 6, 7);
         let i = c1.intersection(&c2).unwrap();
-        assert_eq!(i.p1, c1.p1);
-        assert_eq!(i.p2, c1.p2);
+        assert_eq!(i.p1.x, 3);
+        assert_eq!(i.p1.y, 4);
+        assert_eq!(i.p2.x, 5);
+        assert_eq!(i.p2.y, 6);
     }
 
     #[test]
@@ -116,17 +80,32 @@ mod tests {
         let c1 = Claim::new(2, 3, 6, 7);
         let c2 = Claim::new(3, 4, 5, 6);
         let i = c1.intersection(&c2).unwrap();
-        assert_eq!(i.p1, c2.p1);
-        assert_eq!(i.p2, c2.p2);
+        assert_eq!(i.p1.x, 3);
+        assert_eq!(i.p1.y, 4);
+        assert_eq!(i.p2.x, 5);
+        assert_eq!(i.p2.y, 6);
     }
 
     #[test]
-    fn intersection_edge() {
+    fn intersection_bottom_edge() {
         let c1 = Claim::new(2, 3, 6, 7);
         let c2 = Claim::new(4, 7, 6, 7);
         let i = c1.intersection(&c2).unwrap();
-        assert_eq!(i.p1, c2.p1);
-        assert_eq!(i.p2, c2.p2);
+        assert_eq!(i.p1.x, 4);
+        assert_eq!(i.p1.y, 7);
+        assert_eq!(i.p2.x, 6);
+        assert_eq!(i.p2.y, 7);
+    }
+
+    #[test]
+    fn intersection_right_edge() {
+        let c1 = Claim::new(2, 3, 6, 7);
+        let c2 = Claim::new(6, 2, 6, 7);
+        let i = c1.intersection(&c2).unwrap();
+        assert_eq!(i.p1.x, 6);
+        assert_eq!(i.p1.y, 3);
+        assert_eq!(i.p2.x, 6);
+        assert_eq!(i.p2.y, 7);
     }
 
     #[test]
@@ -134,7 +113,9 @@ mod tests {
         let c1 = Claim::new(2, 3, 6, 7);
         let c2 = Claim::new(6, 7, 6, 7);
         let i = c1.intersection(&c2).unwrap();
-        assert_eq!(i.p1, c2.p1);
-        assert_eq!(i.p2, c2.p2);
+        assert_eq!(i.p1.x, 6);
+        assert_eq!(i.p1.y, 7);
+        assert_eq!(i.p2.x, 6);
+        assert_eq!(i.p2.y, 7);
     }
 }
