@@ -39,12 +39,23 @@ impl Claim {
         }
     }
 
-    fn top_right(&self) -> Point {
-        Point::new(self.p2.x, self.p1.y)
-    }
-
-    fn bot_left(&self) -> Point {
-        Point::new(self.p1.x, self.p2.y)
+    fn from_claim_str(claim: &str) -> Claim {
+        let mut v: Vec<&str> = claim.split(|c| {
+            c == ' ' ||
+            c == '#' ||
+            c == '@' ||
+            c == ',' ||
+            c == ':' ||
+            c == 'x'
+        }).collect();
+        v.retain(|s| !s.is_empty());
+        println!("{:?}", v);
+        assert_eq!(v.len(), 5);
+        let x: i32 = v[1].parse().unwrap();
+        let y: i32 = v[2].parse().unwrap();
+        let w: i32 = v[3].parse().unwrap();
+        let h: i32 = v[4].parse().unwrap();
+        Claim::new(x, y, x + w - 1, y + h - 1)
     }
 
     fn intersection(&self, other: &Claim) -> Option<Claim> {
@@ -117,5 +128,14 @@ mod tests {
         assert_eq!(i.p1.y, 7);
         assert_eq!(i.p2.x, 6);
         assert_eq!(i.p2.y, 7);
+    }
+
+    #[test]
+    fn claim_from_str() {
+        let c = Claim::from_claim_str("#1 @ 1,3: 4x4");
+        assert_eq!(c.p1.x, 1);
+        assert_eq!(c.p1.y, 3);
+        assert_eq!(c.p2.x, 4);
+        assert_eq!(c.p2.y, 6);
     }
 }
