@@ -1,11 +1,29 @@
 use aoc_util::stdin_to_line_vec;
 use std::cmp;
+use std::collections::HashSet;
 
 fn main() {
     let input = stdin_to_line_vec();
+    let result1 = part1(input);
+    println!("Part 1 result is {}", result1);
 }
 
-#[derive(Clone, Copy)]
+fn part1(input: Vec<String>) -> usize {
+    let claims: Vec<_> = input.iter().map(|i| Claim::from_claim_str(i)).collect();
+    let mut overlap_points = HashSet::new();
+    for (i, c1) in claims.iter().enumerate() {
+        for c2 in claims.iter().skip(i + 1) {
+            if let Some(overlap) = c1.intersection(&c2) {
+                overlap.enumerate_points().iter().for_each(|&p| {
+                    overlap_points.insert(p);
+                });
+            }
+        }
+    }
+    overlap_points.len()
+}
+
+#[derive(Clone, Copy, Eq, Hash, PartialEq)]
 struct Point {
     x: i32,
     y: i32,
@@ -39,6 +57,16 @@ impl Claim {
         }
     }
 
+    fn enumerate_points(&self) -> HashSet<Point> {
+        let mut points = HashSet::new();
+        for x in self.p1.x..self.p2.x+1 {
+            for y in self.p1.y..self.p2.y+1 {
+                points.insert(Point::new(x, y));
+            }
+        }
+        points
+    }
+
     fn from_claim_str(claim: &str) -> Claim {
         let mut v: Vec<&str> = claim.split(|c| {
             c == ' ' ||
@@ -49,7 +77,6 @@ impl Claim {
             c == 'x'
         }).collect();
         v.retain(|s| !s.is_empty());
-        println!("{:?}", v);
         assert_eq!(v.len(), 5);
         let x: i32 = v[1].parse().unwrap();
         let y: i32 = v[2].parse().unwrap();
@@ -137,5 +164,12 @@ mod tests {
         assert_eq!(c.p1.y, 3);
         assert_eq!(c.p2.x, 4);
         assert_eq!(c.p2.y, 6);
+    }
+
+    #[test]
+    fn claim_enumerate_points() {
+        let c = Claim::new(2, 3, 5, 6);
+        let points = c.enumerate_points();
+        assert_eq!(points.len(), 16);
     }
 }
