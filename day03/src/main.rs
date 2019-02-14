@@ -4,23 +4,31 @@ use std::collections::HashSet;
 
 fn main() {
     let input = stdin_to_line_vec();
-    let result1 = part1(input);
+    let (result1, result2) = run(input);
     println!("Part 1 result is {}", result1);
+    println!("Part 2 result is {}", result2);
 }
 
-fn part1(input: Vec<String>) -> usize {
+fn run(input: Vec<String>) -> (usize, i32) {
     let claims: Vec<_> = input.iter().map(|i| Claim::from_claim_str(i)).collect();
     let mut overlap_points = HashSet::new();
+    let mut claim_ids = claims.iter().fold(HashSet::new(), |mut h, c| {
+        h.insert(c.id);
+        h
+    });
     for (i, c1) in claims.iter().enumerate() {
         for c2 in claims.iter().skip(i + 1) {
             if let Some(overlap) = c1.intersection(&c2) {
                 overlap.enumerate_points().iter().for_each(|&p| {
                     overlap_points.insert(p);
+                    claim_ids.remove(&c1.id);
+                    claim_ids.remove(&c2.id);
                 });
             }
         }
     }
-    overlap_points.len()
+    assert_eq!(claim_ids.len(), 1);
+    (overlap_points.len(), claim_ids.into_iter().next().unwrap())
 }
 
 #[derive(Clone, Copy, Eq, Hash, PartialEq)]
@@ -39,19 +47,21 @@ impl Point {
 }
 
 struct Claim {
+    id: i32,
     p1: Point,
     p2: Point,
 }
 
 impl Claim {
-    fn new(x1: i32, y1: i32, x2: i32, y2: i32) -> Claim {
+    fn new(id: i32, x1: i32, y1: i32, x2: i32, y2: i32) -> Claim {
         let p1 = Point::new(x1, y1);
         let p2 = Point::new(x2, y2);
-        Claim::from_points(p1, p2)
+        Claim::from_points(id, p1, p2)
     }
 
-    fn from_points(p1: Point, p2: Point) -> Claim {
+    fn from_points(id: i32, p1: Point, p2: Point) -> Claim {
         Claim {
+            id,
             p1,
             p2,
         }
@@ -78,11 +88,12 @@ impl Claim {
         }).collect();
         v.retain(|s| !s.is_empty());
         assert_eq!(v.len(), 5);
+        let id: i32 = v[0].parse().unwrap();
         let x: i32 = v[1].parse().unwrap();
         let y: i32 = v[2].parse().unwrap();
         let w: i32 = v[3].parse().unwrap();
         let h: i32 = v[4].parse().unwrap();
-        Claim::new(x, y, x + w - 1, y + h - 1)
+        Claim::new(id, x, y, x + w - 1, y + h - 1)
     }
 
     fn intersection(&self, other: &Claim) -> Option<Claim> {
@@ -91,7 +102,7 @@ impl Claim {
         let x2 = cmp::min(self.p2.x, other.p2.x);
         let y2 = cmp::min(self.p2.y, other.p2.y);
         if x1 <= x2 && y1 <= y2 {
-            Some(Claim::new(x1, y1, x2, y2))
+            Some(Claim::new(1, x1, y1, x2, y2))
         } else {
             None
         }
@@ -104,8 +115,8 @@ mod tests {
 
     #[test]
     fn intersection_p1_in_p2() {
-        let c1 = Claim::new(3, 4, 5, 6);
-        let c2 = Claim::new(2, 3, 6, 7);
+        let c1 = Claim::new(1, 3, 4, 5, 6);
+        let c2 = Claim::new(1, 2, 3, 6, 7);
         let i = c1.intersection(&c2).unwrap();
         assert_eq!(i.p1.x, 3);
         assert_eq!(i.p1.y, 4);
@@ -115,8 +126,8 @@ mod tests {
 
     #[test]
     fn intersection_p2_in_p1() {
-        let c1 = Claim::new(2, 3, 6, 7);
-        let c2 = Claim::new(3, 4, 5, 6);
+        let c1 = Claim::new(1, 2, 3, 6, 7);
+        let c2 = Claim::new(1, 3, 4, 5, 6);
         let i = c1.intersection(&c2).unwrap();
         assert_eq!(i.p1.x, 3);
         assert_eq!(i.p1.y, 4);
@@ -126,8 +137,8 @@ mod tests {
 
     #[test]
     fn intersection_bottom_edge() {
-        let c1 = Claim::new(2, 3, 6, 7);
-        let c2 = Claim::new(4, 7, 6, 7);
+        let c1 = Claim::new(1, 2, 3, 6, 7);
+        let c2 = Claim::new(1, 4, 7, 6, 7);
         let i = c1.intersection(&c2).unwrap();
         assert_eq!(i.p1.x, 4);
         assert_eq!(i.p1.y, 7);
@@ -137,8 +148,8 @@ mod tests {
 
     #[test]
     fn intersection_right_edge() {
-        let c1 = Claim::new(2, 3, 6, 7);
-        let c2 = Claim::new(6, 2, 6, 7);
+        let c1 = Claim::new(1, 2, 3, 6, 7);
+        let c2 = Claim::new(1, 6, 2, 6, 7);
         let i = c1.intersection(&c2).unwrap();
         assert_eq!(i.p1.x, 6);
         assert_eq!(i.p1.y, 3);
@@ -148,8 +159,8 @@ mod tests {
 
     #[test]
     fn intersection_point() {
-        let c1 = Claim::new(2, 3, 6, 7);
-        let c2 = Claim::new(6, 7, 6, 7);
+        let c1 = Claim::new(1, 2, 3, 6, 7);
+        let c2 = Claim::new(1, 6, 7, 6, 7);
         let i = c1.intersection(&c2).unwrap();
         assert_eq!(i.p1.x, 6);
         assert_eq!(i.p1.y, 7);
@@ -168,7 +179,7 @@ mod tests {
 
     #[test]
     fn claim_enumerate_points() {
-        let c = Claim::new(2, 3, 5, 6);
+        let c = Claim::new(1, 2, 3, 5, 6);
         let points = c.enumerate_points();
         assert_eq!(points.len(), 16);
     }
